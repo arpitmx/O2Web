@@ -1,0 +1,82 @@
+.form{
+    box-sizing: border-box;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    background-color: rgb(33, 32, 35);
+    max-width: 60rem;
+}
+
+.header{
+    padding: 1rem 2rem;
+    border-bottom: 0.1rem solid white;
+    color: rgb(0, 255, 17);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.form h1{
+    margin: 0;
+}
+
+.taskSpecs{
+    display: flex;
+    gap: 1rem;
+    padding: 1.5rem 2rem;
+    border-bottom: 0.1rem solid rgb(0, 255, 17);
+    flex-wrap: wrap;
+}
+
+.taskSpecs label{
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    color: rgb(155, 155, 155);
+}
+
+.taskSpecs select{
+    color: rgb(0, 0, 0);
+}
+
+.taskPhase{
+    display: flex;
+    padding: 1.5rem 2rem;
+    gap: 1rem;
+}
+
+.taskInfo{
+    display: flex;
+    flex-direction: column;
+    padding: 0rem 2rem 1.5rem 2rem;
+    gap: 1rem;
+}
+
+.taskInfo textarea{
+    resize: none;
+}
+
+.taskDuration{
+    margin: 0rem 2rem 1.5rem 2rem;
+    display: flex;
+    gap: 1rem;
+}
+
+.taskDuration label{
+    display: flex;
+    align-items: center;
+}
+
+.taskTags{
+    margin: 0rem 2rem 1.5rem 2rem;
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.taskTags label{
+    display: flex;
+    align-items: center;
+    padding: 0.3rem 0.5rem;
+    border-radius: 100rem;
+}

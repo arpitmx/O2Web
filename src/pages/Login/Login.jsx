@@ -37,6 +37,7 @@ export default function Login() {
           // Set user data in state
           setUserData(userDoc.data());
           console.log("User logged in successfully!");
+          alert("Authenticated!")
         } else {
           console.log("User document does not exist.");
         }
@@ -65,6 +66,7 @@ export default function Login() {
           // Set user data in state
           setUserData(newUserDoc.data());
           console.log("User signed up successfully!");
+          alert("Authenticated!")
         } else {
           console.log("Newly created user document does not exist.");
         }
@@ -76,7 +78,6 @@ export default function Login() {
       console.error("Authentication error:", errorCode, errorMessage);
     } finally {
       setLoading(false);
-      alert("Authenticated!")
     }
   };
 
