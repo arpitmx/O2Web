@@ -1,26 +1,30 @@
 import { useEffect, useState } from "react";
-import PropTypes from 'prop-types'; 
+import PropTypes from 'prop-types';
+import { addTask } from "../../databaseOps";
 
 export default function CreateTask({
     project_ID,
     section,
     segment
 }){
+    const projects = ["Medona", "NCSOxygen", "Odin", "Versa"];
+    const priorities = ["Low", "Medium", "High", "Critical"];
+    const sections = ["Ongoing Now", "Ready for Test", "testing", "Completed"];
+    const segments = ["Backend", "Frontend", "Design"];
+    const tags = ["Critical", "Bug", "Feature", "New"];
+    const difficulties = ["Beginner", "Easy", "Medium", "Hard"];
+    const types = ["Bug", "Feature", "Feature request", "Task", "Exception", "Security", "Performance"];
+    const states = ["Unassigned", "Ongoing", "Open", "Review", "Testing"]
+    const durations = ["hour", "day", "week"];
+
     useEffect(() => {
         // get data
     }, [])
 
-    const projects = ["medusa", "odin", "legacy"];
-    const priorities = ["Low", "Medium", "High"];
-    const sections = ["Ongoing Now", "Ready for Test", "testing", "Completed"];
-    const segments = ["Backend", "Frontend", "Design"];
-    const tags = ["Critical", "Bug", "Feature", "New"];
-    const difficulties = ["Easy", "Medium", "Hard"];
-
     const [task, setTask] = useState({
-        project_ID,
-        section,
-        segment,
+        project_ID : "Medona",
+        section : "Ongoing Now",
+        segment : "Frontend",
         title : "",
         assignee : "",
         assignee_DP_URL : "",
@@ -29,11 +33,11 @@ export default function CreateTask({
         deadline : "1 day",
         description : "",
         difficulty : 3,
-        duration : "1",
+        duration : "1 day",
         id : "",
-        links : [],
         priority : 3,
         status : 2,
+        type : 1,
         tags : [],
         time_STAMP : ""
     })
@@ -41,6 +45,7 @@ export default function CreateTask({
     function handleTaskSubmit(e){
         e.preventDefault();
         console.info(task);
+        // addTask(task);
     }
 
     // event handler for handling changes in String valued fields
@@ -66,6 +71,22 @@ export default function CreateTask({
             setTask((prevTask) => ({...prevTask, tags : [...prevTask.tags.filter((tag) => tag !== tagName)]}));
     }
 
+    function handleDurationEdit(event, durationName){
+        const checked = event.target.checked;
+        if(checked)
+            // add duration name at end of duration text if radio button of that duration name is checked
+            setTask((prevTask) => (
+                {
+                    ...prevTask, 
+                    duration: `${Number(prevTask.duration.split(" ")[0])} ${durationName}`
+                }));
+    }
+
+    function handleDurationQuantityEdit(event){
+        const value = event.target.value;
+        setTask((prevTask) => ({...prevTask, duration: `${Number(value)} ${prevTask.duration.split(" ")[1]}`}));
+    }
+
     const projectOptions = projects.map((projectName) => 
         <option key={projectName} value={projectName}>{projectName}</option>
     )
@@ -76,6 +97,14 @@ export default function CreateTask({
 
     const difficultyOptions = difficulties.map((difficulty, index) => 
         <option key={difficulty} value={index+1}>{difficulty}</option>
+    )
+
+    const stateOptions = states.map((state, index) =>
+        <option key={state} value={index+1}>{state}</option>
+    )
+
+    const typeOptions = types.map((type, index) => 
+        <option key={type} value={index+1}>{type}</option>
     )
 
     const segmentOptions = segments.map((segmentName) =>
@@ -90,7 +119,7 @@ export default function CreateTask({
         <label key={tagName} htmlFor={tagName}>
             {tagName} :
             <input 
-                name={tagName} 
+                name={"tag"} 
                 id={tagName} 
                 type="checkbox" 
                 // if taskName present in the tags array of task object then give true
@@ -99,6 +128,21 @@ export default function CreateTask({
             />
         </label>
     )
+
+    const durationOptions = durations.map((duration) => 
+        <label key={duration} htmlFor={duration}>
+            {duration} :
+            <input 
+                name={"duration"} 
+                id={duration} 
+                type="radio" 
+                // if duration name present in the dutaion text of task object then give true
+                checked={task.duration.split(" ")[1] === duration ? true : false}
+                onChange={(e) => handleDurationEdit(e, duration)}
+            />
+        </label>
+    )
+
 
     return (
         <>
@@ -140,6 +184,20 @@ export default function CreateTask({
                         {difficultyOptions}
                     </select>
                 </label>
+
+                <label htmlFor="type">
+                    Type : 
+                    <select id="type" value={task.type} name="type" onChange={handleNumChange}>
+                        {typeOptions}
+                    </select>
+                </label>
+
+                <label htmlFor="state">
+                    State : 
+                    <select id="state" value={task.state} name="state" onChange={handleNumChange}>
+                        {stateOptions}
+                    </select>
+                </label>
                 <br></br>
 
                 <label htmlFor="title">
@@ -155,7 +213,19 @@ export default function CreateTask({
                 <br></br>
 
                 <fieldset>
-                    <legend>Tags : </legend>
+                    <legend>Duration</legend>
+                    <input 
+                        type="number" 
+                        min="1"
+                        max="100"
+                        value={Number(task.duration.split(" ")[0])} 
+                        onChange={handleDurationQuantityEdit}
+                    />
+                    {durationOptions}
+                </fieldset>
+
+                <fieldset>
+                    <legend>Tags</legend>
                     {tagOptions}
                 </fieldset>
 
