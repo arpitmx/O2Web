@@ -1,17 +1,10 @@
 import {db} from "../firebase"
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc,getDocs, getDoc, setDoc, collection } from 'firebase/firestore';
 
-function addTask (task){
+async function addTask (task){
     const collectionPath = `Projects/${task.project_ID}/TASKS`;
-    const docRef = doc(db, collectionPath, task.task_ID);
-
-    setDoc(docRef, task)
-    .then(() => {
-        console.info('Task added successfully');
-    })
-    .catch((error) => {
-        console.error('Error adding task: ', error);
-    });
+    const docRef = doc(db, collectionPath, task.id);
+    await setDoc(docRef, task);
 }
 
 async function getProjects(){
@@ -24,13 +17,12 @@ async function getProjects(){
 }
 
 async function getSegments(project_ID){
-    const collectionPath = `Projects/${project_ID}/SEGMENTS`;
-    const segmentsRef = doc(db, collectionPath, project_ID);
-    
-    const snapshot = await segmentsRef.get();
-    const segments = snapshot.docs.map((segment) =>
-        segment.id
-    )
+    const segmentsCollection = collection(db, `Projects/${project_ID}/SEGMENTS`);
+    const querySnapshot = await getDocs(segmentsCollection);
+    let segments = []
+    querySnapshot.forEach((doc) => {
+      segments.push(doc.id);
+    });
     return segments
 }
 
@@ -47,14 +39,21 @@ async function getTags(project_ID){
     }
 }
 
-async function getContributers(project_ID){
+async function getContributors(project_ID){
     const collectionPath = "Projects";
     const projectRef = doc(db, collectionPath, project_ID);
 
     const projectSnap = await getDoc(projectRef);
     if (projectSnap.exists()) {
-        const users = projectSnap.data().CONTRIBUTERS;
-        const userPath = "Users";
+        const contributorsIDs = projectSnap.data().contributors;
+        const usersCollection = collection(db, "Users");
+        const querySnapshot = await getDocs(usersCollection);
+        let contributors = []
+        querySnapshot.forEach((doc) => {
+            if(contributorsIDs.includes(doc.id))
+                contributors.push([doc.id, doc.data()]);
+        });
+        return contributors;
     }
     else {
         console.log("No such document!");
@@ -65,5 +64,6 @@ export {
     addTask,
     getProjects,
     getSegments,
-    getTags
+    getTags,
+    getContributors
 }
