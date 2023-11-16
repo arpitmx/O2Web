@@ -2,6 +2,7 @@ import {db} from "../firebase"
 import { doc,getDocs, getDoc, setDoc, collection } from 'firebase/firestore';
 
 async function addTask (task){
+    task.id = `#T${Math.floor((Math.random()*900000)+100000)}`;
     const collectionPath = `Projects/${task.project_ID}/TASKS`;
     const docRef = doc(db, collectionPath, task.id);
     await setDoc(docRef, task);
@@ -51,7 +52,7 @@ async function getContributors(project_ID){
         let contributors = []
         querySnapshot.forEach((doc) => {
             if(contributorsIDs.includes(doc.id))
-                contributors.push([doc.id, doc.data()]);
+                contributors.push(doc.data());
         });
         return contributors;
     }

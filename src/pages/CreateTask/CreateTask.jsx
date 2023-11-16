@@ -24,7 +24,7 @@ export default function CreateTask(){
     const [task, setTask] = useState({
         project_ID : "Versa",
         section : "Ongoing Now",
-        segment : data.segments[0],
+        segment : "",
         title : "",
         assignee : "",
         assignee_DP_URL : "",
@@ -32,17 +32,26 @@ export default function CreateTask(){
         completed : false,
         deadline : "1 day",
         description : "",
-        difficulty : 3,
+        difficulty : 1,
         duration : "1 day",
-        id : `#T${Math.floor((Math.random()*900000)+100000)}`,
-        priority : 3,
-        status : 2,
+        id : "",
+        priority : 1,
+        state : 1,
         type : 1,
         tags : [],
+        moderators : [],
         time_STAMP : ""
     })
 
+    // handle data when new project is selected
     useEffect(() => {
+        // reset any selected moderators or tags from task array
+        setTask((prevTask) => ({
+            ...prevTask, 
+            moderators : [],
+            tags: [],
+        }));
+
         // get tags of the selected project
         getTags(task.project_ID).then((tagsData) => {
             setData((prevData) => {
@@ -55,6 +64,8 @@ export default function CreateTask(){
             setData((prevData) => {
                 return {...prevData, segments : segmentData ? [...segmentData] : []};
             })
+            // set default segment of the project
+            setTask((prevTask) => ({...prevTask, segment : segmentData[0]}));
         });
 
         // get constibutors of the selected project
@@ -62,6 +73,11 @@ export default function CreateTask(){
             setData((prevData) => {
                 return {...prevData, contributors : contributorsData ? [...contributorsData] : []};
             })
+            // set default assignee of the task
+            setTask((prevTask) => ({
+                ...prevTask, 
+                assignee : contributorsData[0].USERNAME,
+            }));
         })
 
     }, [task.project_ID])
@@ -69,7 +85,12 @@ export default function CreateTask(){
     async function handleTaskSubmit(e){
         e.preventDefault();
         console.info(task);
-        addTask(task);
+        addTask(task).then(() => {
+            alert("task added succesfully");
+        }).catch((error) => {
+            console.log(error)
+            alert("error adding task");
+        })
     }
 
     // event handler for handling changes in String valued fields
@@ -87,14 +108,27 @@ export default function CreateTask(){
     }
 
     // event handler for handling changes in tag selection
-    function handleTagsEdit(event, tagName){
+    function handleTagsEdit(event, tagID){
         const checked = event.target.checked;
         if(checked)
             // add tagname in tags array of task object if checkbox is checked
-            setTask((prevTask) => ({...prevTask, tags : [...prevTask.tags, tagName]}));
+            setTask((prevTask) => ({...prevTask, tags : [...prevTask.tags, tagID]}));
         else
             // remove tagname from tags array of task object if checkbox is unchecked
-            setTask((prevTask) => ({...prevTask, tags : [...prevTask.tags.filter((tag) => tag !== tagName)]}));
+            setTask((prevTask) => ({...prevTask, tags : [...prevTask.tags.filter((tag) => tag !== tagID)]}));
+    }
+
+     // event handler for handling changes in mod selection
+     function handleModsEdit(event, modEmail){
+        const checked = event.target.checked;
+        if(checked)
+            // add mod in moderators array of task object if checkbox is checked
+            setTask((prevTask) => ({...prevTask, moderators : [...prevTask.moderators, modEmail]}));
+        else
+            // remove mod from moderators array of task object if checkbox is unchecked
+            setTask((prevTask) => (
+                {...prevTask, tags : [...prevTask.moderators.filter((mod) => mod !== modEmail)]}
+            ));
     }
 
     function handleDurationEdit(event, durationName){
@@ -144,13 +178,13 @@ export default function CreateTask(){
     )
 
     const assigneeOptions = data.contributors.map((contributor) => 
-        <option key={contributor[0]} value={contributor[0]}>{contributor[0]}</option>
+        <option key={contributor.EMAIL} value={contributor.EMAIL}>{contributor.USERNAME}</option>
     )
     
     const tagOptions = data.tags.map((tagName) => 
         <label 
-            key={tagName.tagText} 
-            htmlFor={tagName.tagText}
+            key={tagName.tagID} 
+            htmlFor={tagName.tagID}
             style={{
                 backgroundColor : tagName.bgColor,
                 color: tagName.textColor,
@@ -159,14 +193,34 @@ export default function CreateTask(){
             {tagName.tagText} :
             <input 
                 name={"tag"} 
-                id={tagName.tagText} 
+                id={tagName.tagID} 
                 type="checkbox" 
                 // if taskName present in the tags array of task object then give true
-                checked={task.tags.indexOf(tagName.tagText) !== -1 ? true : false}
-                onChange={(e) => handleTagsEdit(e, tagName.tagText)}
+                checked={task.tags.indexOf(tagName.tagID) !== -1 ? true : false}
+                onChange={(e) => handleTagsEdit(e, tagName.tagID)}
             />
         </label>
     )
+
+    const modOptions = data.contributors.map((contributor) => {
+        if(contributor.ROLE >= 3){
+            return <label 
+                key={contributor.EMAIL}
+                htmlFor={contributor.EMAIL}
+                className={styles.modOption}
+            >
+                {contributor.USERNAME}
+                <input 
+                    name={"moderator"} 
+                    id={contributor.EMAIL} 
+                    type="checkbox" 
+                    // if taskName present in the tags array of task object then give true
+                    checked={task.moderators.indexOf(contributor.EMAIL) !== -1 ? true : false}
+                    onChange={(e) => handleModsEdit(e, contributor.EMAIL)}
+                />
+            </label>
+        }
+    })
 
     const durationOptions = durations.map((duration) => 
         <label key={duration} htmlFor={duration}>
@@ -271,6 +325,11 @@ export default function CreateTask(){
                         onChange={handleDurationQuantityEdit}
                     />
                     {durationOptions}
+                </fieldset>
+
+                <fieldset className={styles.taskMods}>
+                    <legend>Moderators</legend>
+                    {modOptions}
                 </fieldset>
 
                 <fieldset className={styles.taskTags}>
