@@ -5,6 +5,7 @@
     flex-direction: column;
     background-color: rgb(33, 32, 35);
     max-width: 60rem;
+    margin: 0rem auto;
 }
 
 .header{
