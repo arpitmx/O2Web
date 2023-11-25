@@ -1,3 +1,10 @@
+.container{
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
 .card {
     background-color: #333;
     border: 1px solid #ccc;
@@ -79,6 +86,7 @@
     color: #fff;
     border: none;
     font-size: 1rem;
+    margin-top: 0.8rem;
     padding: 10px;
     font-weight: bold;
     border-radius: 4px;

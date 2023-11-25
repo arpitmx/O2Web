@@ -1,9 +1,12 @@
 body {
     font-family: 'Arial', sans-serif;
     background-color: #111;
-    display: flex;
+
+    /* This is not good rohit 🤬🤬🤬🤬🤬*/
+    /* display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: center; */
+
     height: 100vh;
     margin: 0;
   }
