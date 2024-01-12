@@ -1,59 +1,91 @@
+import Select from 'react-select'
 import { useEffect, useState } from "react";
-import PropTypes from 'prop-types';
-import { addTask, getTags, getSegments, getContributors } from "../../databaseOps";
+import { addTask, getTags, getSegments, getContributors, getProjects } from "../../utils/databaseOps";
 import styles from "./CreateTask.module.css";
 
 export default function CreateTask(){
 
     // hardcoded values
-    const priorities = ["Low", "Medium", "High", "Critical"];
-    const sections = ["Ongoing Now", "Ready for Test", "testing", "Completed"];
-    const difficulties = ["Beginner", "Easy", "Medium", "Hard"];
-    const types = ["Bug", "Feature", "Feature request", "Task", "Exception", "Security", "Performance"];
-    const states = ["Unassigned", "Ongoing", "Open", "Review", "Testing"]
+    
+    const priorities = [
+        {value : 1, label: "Low"},
+        {value : 2, label: "Medium"},
+        {value : 3, label: "High"},
+        {value : 4, label: "Critical"}
+    ];
+
+    const difficulties = [
+        {value : 1, label : "Beginner"},
+        {value : 2, label : "Easy"},
+        {value : 3, label : "Medium"},
+        {value : 4, label : "Hard"},
+    ];
+
+    const types = [
+        {value : 1, label : "Bug"},
+        {value : 2, label : "Feature"},
+        {value : 3, label : "Feature request"},
+        {value : 4, label : "Exception"},
+        {value : 5, label : "Security"},
+        {value : 6, label : "Performance"},
+    ];
+
     const durations = ["hour", "day", "week"];
 
     // values per project basis
     const [data, setData] = useState({
-        projects : ["Medona", "NCSOxygen", "Odin", "Versa"],
-        segments : ["Backend", "Frontend", "Design"],
+        projects : [],
+        segments : [],
+        sections : [],
         contributors : [],
         tags : [],
     });
 
+    // task object to be submitted to database
     const [task, setTask] = useState({
-        project_ID : "Versa",
-        section : "Ongoing Now",
-        segment : "",
-        title : "",
-        assignee : "",
-        assignee_DP_URL : "",
-        assigner : "",
-        completed : false,
-        deadline : "1 day",
-        description : "",
-        difficulty : 1,
-        duration : "1 day",
         id : "",
-        priority : 1,
-        state : 1,
-        type : 1,
-        tags : [],
+        title : "",
+        description : "",
+        
+        difficulty : undefined,
+        priority : undefined,
+        status : 0,
+        
+        assignee : undefined,
+        assigner : "", // the user creating the task
         moderators : [],
-        time_STAMP : ""
+
+        time_STAMP : "",
+        duration : "1 day",
+        tags : [], // array
+
+        project_ID : undefined,
+        segment : undefined,
+        section : undefined,
+        type : undefined,
+
+        last_updated : "", // Timestamp
     })
 
-    // handle data when new project is selected
+    // get projects on page load
     useEffect(() => {
-        // reset any selected moderators or tags from task array
-        setTask((prevTask) => ({
-            ...prevTask, 
-            moderators : [],
-            tags: [],
-        }));
+        getProjects().then((projects) => {
+            setData((prevData) => {
+                return {...prevData, projects : projects ? projects.map((project) => {
+                    return {value : project, label : project}
+                }) : [] }
+            })
+        })
+    }, [])
+
+    // get project specific data when new project is selected
+    useEffect(() => {
+        if(!task.project_ID)
+            return
 
         // get tags of the selected project
         getTags(task.project_ID).then((tagsData) => {
+            console.log(tagsData);
             setData((prevData) => {
                 return {...prevData, tags : tagsData ? [...tagsData] : []};
             })
@@ -62,75 +94,94 @@ export default function CreateTask(){
         // get segments of the selected project
         getSegments(task.project_ID).then((segmentData) => {
             setData((prevData) => {
-                return {...prevData, segments : segmentData ? [...segmentData] : []};
+                return {...prevData, segments : segmentData ? segmentData.map((segment) => {
+                    return {value : segment[0], label : segment[0], sections : segment[1]}
+                }) : []};
             })
             // set default segment of the project
-            setTask((prevTask) => ({...prevTask, segment : segmentData[0]}));
+            // setTask((prevTask) => ({...prevTask, segment : segmentData[0]}));
         });
 
         // get constibutors of the selected project
         getContributors(task.project_ID).then((contributorsData) => {
             setData((prevData) => {
-                return {...prevData, contributors : contributorsData ? [...contributorsData] : []};
+                return {...prevData, contributors : contributorsData ? contributorsData.map((contributor) => {
+                    return {...contributor, value : contributor.EMAIL, label : contributor.USERNAME}
+                }) : []};
             })
             // set default assignee of the task
-            setTask((prevTask) => ({
-                ...prevTask, 
-                assignee : contributorsData[0].USERNAME,
-            }));
-        })
+            // setTask((prevTask) => ({
+            //     ...prevTask, 
+            //     assignee : contributorsData[0].USERNAME,
+            // }));
+        });
 
+        return () => {
+            // reset any selected moderators or tags from task array
+            setTask((prevTask) => ({
+                ...prevTask,
+                moderators : [],
+                tags: [],
+                segment: undefined,
+            }));
+        };
     }, [task.project_ID])
 
+    // get sections of the selected segment
+    useEffect(() => {
+        if(!task.segment)
+            return;
+
+        setData((prevData) => {
+            return {...prevData, sections : prevData.segments[prevData.segments.findIndex((segment) => {
+                return segment.value === task.segment;
+            })]['sections'].map((section) => ({ value : section, label : section}))}
+        })
+    }, [task.segment])
+
+
+    // handle submission of the task
     async function handleTaskSubmit(e){
         e.preventDefault();
+        if(Object.values(task).includes(undefined)){
+            alert("form not complete");
+        }
         console.info(task);
+        // else{
+        //     console.info(task);
         addTask(task).then(() => {
             alert("task added succesfully");
         }).catch((error) => {
             console.log(error)
             alert("error adding task");
         })
+        // }
     }
 
-    // event handler for handling changes in String valued fields
+    // event handler for handling changes in select
+    const handleSelectChange = (select, spec) => {
+        setTask((prevTask) => ({...prevTask, [spec] : select.value}));
+        console.log(`Option selected:`, select.value);
+    };
+
+    // event handler for handling project title and desc input
     function handleChange(event){
         const { name, value } = event.target;
-        if (name === "project_ID")
-            console.info(task.project_ID)
         setTask((prevTask) => ({...prevTask, [name] : value}));
-    }
-
-    // event handler for handling changes in Numeric fields
-    function handleNumChange(event){
-        const { name, value } = event.target;
-        setTask((prevTask) => ({...prevTask, [name] : Number(value)}));
     }
 
     // event handler for handling changes in tag selection
     function handleTagsEdit(event, tagID){
         const checked = event.target.checked;
         if(checked)
-            // add tagname in tags array of task object if checkbox is checked
+            // add tagID in tags array of task object if checkbox is checked
             setTask((prevTask) => ({...prevTask, tags : [...prevTask.tags, tagID]}));
         else
-            // remove tagname from tags array of task object if checkbox is unchecked
+            // remove tagID from tags array of task object if checkbox is unchecked
             setTask((prevTask) => ({...prevTask, tags : [...prevTask.tags.filter((tag) => tag !== tagID)]}));
     }
 
-     // event handler for handling changes in mod selection
-     function handleModsEdit(event, modEmail){
-        const checked = event.target.checked;
-        if(checked)
-            // add mod in moderators array of task object if checkbox is checked
-            setTask((prevTask) => ({...prevTask, moderators : [...prevTask.moderators, modEmail]}));
-        else
-            // remove mod from moderators array of task object if checkbox is unchecked
-            setTask((prevTask) => (
-                {...prevTask, tags : [...prevTask.moderators.filter((mod) => mod !== modEmail)]}
-            ));
-    }
-
+    // event handler for handling project duration selection(hours, days, weeks)
     function handleDurationEdit(event, durationName){
         const checked = event.target.checked;
         if(checked){
@@ -144,43 +195,13 @@ export default function CreateTask(){
         }
     }
 
+    // event handler for handling duration quantity edit
     function handleDurationQuantityEdit(event){
         const value = event.target.value;
         setTask((prevTask) => ({...prevTask, duration: `${Number(value)} ${prevTask.duration.split(" ")[1]}`}));
     }
-
-    const projectOptions = data.projects.map((projectName) => 
-        <option key={projectName} value={projectName}>{projectName}</option>
-    )
-
-    const priorityOptions = priorities.map((priority, index) => 
-        <option key={priority} value={index+1}>{priority}</option>
-    )
-
-    const difficultyOptions = difficulties.map((difficulty, index) => 
-        <option key={difficulty} value={index+1}>{difficulty}</option>
-    )
-
-    const stateOptions = states.map((state, index) =>
-        <option key={state} value={index+1}>{state}</option>
-    )
-
-    const typeOptions = types.map((type, index) => 
-        <option key={type} value={index+1}>{type}</option>
-    )
-
-    const segmentOptions = data.segments.map((segmentName) =>
-        <option key={segmentName} value={segmentName}>{segmentName}</option>
-    )
-
-    const sectionOptions = sections.map((sectionName) =>
-        <option key={sectionName} value={sectionName}>{sectionName}</option>
-    )
-
-    const assigneeOptions = data.contributors.map((contributor) => 
-        <option key={contributor.EMAIL} value={contributor.EMAIL}>{contributor.USERNAME}</option>
-    )
     
+    // construct an array of tags to be rendered
     const tagOptions = data.tags.map((tagName) => 
         <label 
             key={tagName.tagID} 
@@ -202,26 +223,12 @@ export default function CreateTask(){
         </label>
     )
 
-    const modOptions = data.contributors.map((contributor) => {
-        if(contributor.ROLE >= 3){
-            return <label 
-                key={contributor.EMAIL}
-                htmlFor={contributor.EMAIL}
-                className={styles.modOption}
-            >
-                {contributor.USERNAME}
-                <input 
-                    name={"moderator"} 
-                    id={contributor.EMAIL} 
-                    type="checkbox" 
-                    // if taskName present in the tags array of task object then give true
-                    checked={task.moderators.indexOf(contributor.EMAIL) !== -1 ? true : false}
-                    onChange={(e) => handleModsEdit(e, contributor.EMAIL)}
-                />
-            </label>
-        }
+    // construct an array of mods to be rendered
+    const modOptions = data.contributors.filter((contributor) => {
+        return contributor.ROLE >= 3;
     })
 
+    // construct an array of duration names to be rendered
     const durationOptions = durations.map((duration) => 
         <label key={duration} htmlFor={duration}>
             {duration}
@@ -229,14 +236,24 @@ export default function CreateTask(){
                 name={"duration"} 
                 id={duration} 
                 type="radio" 
-                // if duration name present in the dutaion text of task object then give true
+                // if duration name present in the duraion text of task object then give true
                 checked={task.duration.split(" ")[1] === duration ? true : false}
                 onChange={(e) => handleDurationEdit(e, duration)}
             />
         </label>
     )
 
+    // handle multi selection of moderators from dropdown
+    function handleModsSelect(moderators){
+        setTask((prevTask) => (
+            {...prevTask, moderators : moderators.map((moderator) => {
+                return moderator.EMAIL;
+            })}
+        ));
+    }
 
+
+    // render task form
     return (
         <>
             <form className={styles.form} onSubmit={handleTaskSubmit}>
@@ -247,55 +264,78 @@ export default function CreateTask(){
                     </button>
                 </div>
                 <div className={styles.taskSpecs}>
-                    <label htmlFor="project_ID">
-                        Project
-                        <select id="project_ID" value={task.project_ID} name="project_ID" onChange={handleChange}>
-                            {projectOptions}
-                        </select>
-                    </label>
-                    <label htmlFor="priority">
-                        Priority
-                        <select id="priority" value={task.priority} name="priority" onChange={handleNumChange}>
-                            {priorityOptions}
-                        </select>
-                    </label>
-                    <label htmlFor="type">
-                        Type
-                        <select id="type" value={task.type} name="type" onChange={handleNumChange}>
-                            {typeOptions}
-                        </select>
-                    </label>
-                    <label htmlFor="state">
-                        State
-                        <select id="state" value={task.state} name="state" onChange={handleNumChange}>
-                            {stateOptions}
-                        </select>
-                    </label>
-                    <label htmlFor="difficulty">
-                        Difficulty
-                        <select id="difficulty" value={task.difficulty} name="difficulty" onChange={handleNumChange}>
-                            {difficultyOptions}
-                        </select>
-                    </label>
-                    <label htmlFor="assignee">
-                        Assignee
-                        <select id="assignee" value={task.assignee} name="assignee" onChange={handleChange}>
-                            {assigneeOptions}
-                        </select>
-                    </label>
+                    
+                    {/* Project_ID select dropdown*/}
+                    <Select
+                        options={data.projects}
+                        onChange={(select) => handleSelectChange(select, "project_ID")}
+                        autoFocus={true}
+                        className={styles.selectElement}
+                        placeholder={"Project"}
+                    />
+
+                    {/* priority select dropdown*/}
+                    <Select
+                        options={priorities}
+                        onChange={(select) => handleSelectChange(select, "priority")}
+                        autoFocus={true}
+                        className={styles.selectElement}
+                        placeholder={"Priority"}
+                    />
+
+                    {/* Type select dropdown*/}
+                    <Select
+                        options={types}
+                        onChange={(select) => handleSelectChange(select, "type")}
+                        autoFocus={true}
+                        className={styles.selectElement}
+                        placeholder={"Type"}
+                    />
+
+                    {/* Difficulty select dropdown*/}
+                    <Select
+                        options={difficulties}
+                        onChange={(select) => handleSelectChange(select, "difficulty")}
+                        autoFocus={true}
+                        className={styles.selectElement}
+                        placeholder={"Difficulty"}
+                    />
+
+                    {/* Assignee select dropdown*/}
+                    <Select
+                        options={data.contributors}
+                        onChange={(select) => handleSelectChange(select, "assignee")}
+                        autoFocus={true}
+                        className={styles.selectElement}
+                        placeholder={"Assignee"}
+                    />
                 </div>
 
                 <div className={styles.taskPhase}>
-                    <select id="segment" value={task.segment} name="segment" onChange={handleChange}>
-                        {segmentOptions}
-                    </select>
+
+                    {/* segment select dropdown*/}
+                    <Select
+                        options={data.segments}
+                        onChange={(select) => handleSelectChange(select, "segment")}
+                        autoFocus={true}
+                        className={styles.selectElement}
+                        placeholder={"Segment"}
+                    />
                     {">"}
-                    <select id="section" value={task.section} name="section" onChange={handleChange}>
-                        {sectionOptions}
-                    </select>
+
+                    {/* section select dropdown*/}
+                    <Select
+                        options={data.sections}
+                        onChange={(select) => handleSelectChange(select, "section")}
+                        autoFocus={true}
+                        className={styles.selectElement}
+                        placeholder={"Section"}
+                    />
                 </div>
                 
                 <div className={styles.taskInfo}>
+
+                    {/* title textbox */}
                     <input 
                         id="title" 
                         type="text" 
@@ -304,6 +344,8 @@ export default function CreateTask(){
                         onChange={handleChange} 
                         placeholder="Title"
                     />
+
+                    {/* description textarea */}
                     <textarea 
                         id="description" 
                         type="text" 
@@ -315,8 +357,10 @@ export default function CreateTask(){
                     />
                 </div>
 
+                {/* duration edit section */}
                 <fieldset className={styles.taskDuration}>
                     <legend>Duration</legend>
+                    {/* Duration quantity */}
                     <input 
                         type="number" 
                         min="1"
@@ -324,14 +368,24 @@ export default function CreateTask(){
                         value={Number(task.duration.split(" ")[0])} 
                         onChange={handleDurationQuantityEdit}
                     />
+                    {/* duration type */}
                     {durationOptions}
                 </fieldset>
 
+                {/* moderators multiselect */}
                 <fieldset className={styles.taskMods}>
                     <legend>Moderators</legend>
-                    {modOptions}
+                    <Select 
+                        isMulti 
+                        onChange={handleModsSelect} 
+                        options={modOptions}
+                        placeholder={"Moderators"}
+                        closeMenuOnSelect={false}
+                        className={styles.selectElement}
+                    />
                 </fieldset>
 
+                {/* tags select */}
                 <fieldset className={styles.taskTags}>
                     <legend>Tags</legend>
                     {tagOptions}
@@ -341,9 +395,3 @@ export default function CreateTask(){
         </>
     )
 }
-
-// CreateTask.propTypes = { 
-//     project_ID: PropTypes.string.isRequired,
-//     section: PropTypes.string.isRequired,
-//     segment: PropTypes.string.isRequired,
-// };
