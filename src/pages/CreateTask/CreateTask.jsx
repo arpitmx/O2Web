@@ -49,10 +49,10 @@ export default function CreateTask(){
         
         difficulty : undefined,
         priority : undefined,
-        status : 0,
+        status : 4, // how does this work?
         
         assignee : undefined,
-        assigner : "", // the user creating the task
+        assigner : "piyushya012@gmail.com", // the user creating the task
         moderators : [],
 
         time_STAMP : "",
@@ -65,6 +65,7 @@ export default function CreateTask(){
         type : undefined,
 
         last_updated : "", // Timestamp
+        version: 4, // wht is this?
     })
 
     // get projects on page load
