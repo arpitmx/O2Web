@@ -1,5 +1,13 @@
-import { db } from "../../firebase";
+import { db, storage } from "../../firebase";
 import { doc, getDocs, getDoc, setDoc, collection } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import generateRandomFileName from "../helpers/generateRandomFileName";
+import {signOut} from "firebase/auth";
+
+
+const logout = () => {
+  signOut(auth);
+};
 
 async function addTask(task) {
   task.id = `#${(task.project_ID.substr(0, 2)+task.project_ID.at(-1)).toUpperCase()}-${Math.floor(Math.random() * 9000 + 1000)}`;
@@ -56,6 +64,16 @@ async function getContributors(project_ID) {
     console.log("No such document!");
   }
 }
+
+// Function to upload image to Firebase Storage
+export const uploadImage = async (task, file) => {
+  console.log("IMAGE UPLOAD PATH",`Projects/${task.project_ID}/${generateRandomFileName()}`)
+  const imageRef = ref(storage, `Projects/${task.project_ID}/${generateRandomFileName()}`);
+  await uploadBytes(imageRef, file);
+
+  const downloadURL = await getDownloadURL(imageRef);
+  return downloadURL;
+};
 
 export { addTask, getProjects, getSegments, getTags, getContributors };
 

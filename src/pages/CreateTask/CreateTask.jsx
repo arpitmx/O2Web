@@ -1,46 +1,57 @@
-import Select from 'react-select'
-import { useEffect, useState } from "react";
-import { addTask, getTags, getSegments, getContributors, getProjects } from "../../utils/databaseOps";
+import Select from "react-select";
+import { useEffect, useRef, useState } from "react";
+import {
+  addTask,
+  getTags,
+  getSegments,
+  getContributors,
+  getProjects,
+  uploadImage,
+  logout
+} from "../../utils/databaseOps";
+
 import styles from "./CreateTask.module.css";
+import { useNavigate, useLocation } from "react-router-dom";
 import SummaryEdit from './components/SummaryEdit';
 
-export default function CreateTask(){
+export default function CreateTask() {
+  const location = useLocation();
+  const navigate = useNavigate();
 
-    // hardcoded values
-    
-    const priorities = [
-        {value : 1, label: "Low"},
-        {value : 2, label: "Medium"},
-        {value : 3, label: "High"},
-        {value : 4, label: "Critical"}
-    ];
+  // hardcoded values
+  const priorities = [
+    { value: 1, label: "Low" },
+    { value: 2, label: "Medium" },
+    { value: 3, label: "High" },
+    { value: 4, label: "Critical" },
+  ];
 
-    const difficulties = [
-        {value : 1, label : "Beginner"},
-        {value : 2, label : "Easy"},
-        {value : 3, label : "Medium"},
-        {value : 4, label : "Hard"},
-    ];
+  const difficulties = [
+    { value: 1, label: "Beginner" },
+    { value: 2, label: "Easy" },
+    { value: 3, label: "Medium" },
+    { value: 4, label: "Hard" },
+  ];
 
-    const types = [
-        {value : 1, label : "Bug"},
-        {value : 2, label : "Feature"},
-        {value : 3, label : "Feature request"},
-        {value : 4, label : "Exception"},
-        {value : 5, label : "Security"},
-        {value : 6, label : "Performance"},
-    ];
+  const types = [
+    { value: 1, label: "Bug" },
+    { value: 2, label: "Feature" },
+    { value: 3, label: "Feature request" },
+    { value: 4, label: "Exception" },
+    { value: 5, label: "Security" },
+    { value: 6, label: "Performance" },
+  ];
 
-    const durations = ["hour", "day", "week"];
+  const durations = ["hour", "day", "week"];
 
-    // values per project basis
-    const [data, setData] = useState({
-        projects : [],
-        segments : [],
-        sections : [],
-        contributors : [],
-        tags : [],
-    });
+  // values per project basis
+  const [data, setData] = useState({
+    projects: [],
+    segments: [],
+    sections: [],
+    contributors: [],
+    tags: [],
+  });
 
     // task object to be submitted to database
     const [task, setTask] = useState({
@@ -51,7 +62,7 @@ export default function CreateTask(){
         priority : undefined,
         status : 1,
         assignee : undefined,
-        assigner : "piyushya012@gmail.com", // get the assigner from login page
+        assigner : location.state?.userData.EMAIL, // get the assigner from login page
         moderators : [],
         time_STAMP : undefined,
         duration : "1 day",
@@ -64,29 +75,39 @@ export default function CreateTask(){
         version: 4,
     })
 
+    function logout(){
+        navigate("/");
+    }
+
     // get projects on page load
     useEffect(() => {
-        getProjects(task.assigner).then((projects) => {
-            setData((prevData) => {
-                return {...prevData, projects : projects ? projects.map((project) => {
-                    return {value : project, label : project}
-                }) : [] }
-            })
+        if(!location.state?.userData)
+            logout();
+        setData((prevData) => {
+            return {...prevData, projects : location.state?.userData.PROJECTS.map((project) => {
+                return {value : project, label : project}
+            })}
         })
-    }, [])
+        // getProjects(task.assigner).then((projects) => {
+        //     setData((prevData) => {
+        //         return {...prevData, projects : projects ? projects.map((project) => {
+        //             return {value : project, label : project}
+        //         }) : [] }
+        //     })
+        // })
+    }, [location.state?.userData])
 
-    // get project specific data when new project is selected
-    useEffect(() => {
-        if(!task.project_ID)
-            return
+  // get project specific data when new project is selected
+  useEffect(() => {
+    if (!task.project_ID) return;
 
-        // get tags of the selected project
-        getTags(task.project_ID).then((tagsData) => {
-            console.log(tagsData);
-            setData((prevData) => {
-                return {...prevData, tags : tagsData ? [...tagsData] : []};
-            })
-        })
+    // get tags of the selected project
+    getTags(task.project_ID).then((tagsData) => {
+      console.log(tagsData);
+      setData((prevData) => {
+        return { ...prevData, tags: tagsData ? [...tagsData] : [] };
+      });
+    });
 
         // get segments of the selected project
         getSegments(task.project_ID).then((segmentData) => {
@@ -106,29 +127,32 @@ export default function CreateTask(){
             })
         });
 
-        return () => {
-            // reset any selected moderators or tags from task array
-            setTask((prevTask) => ({
-                ...prevTask,
-                moderators : [],
-                tags: [],
-                segment: undefined,
-            }));
-        };
-    }, [task.project_ID])
+    return () => {
+      // reset any selected moderators or tags from task array
+      setTask((prevTask) => ({
+        ...prevTask,
+        moderators: [],
+        tags: [],
+        segment: undefined,
+      }));
+    };
+  }, [task.project_ID]);
 
-    // get sections of the selected segment
-    useEffect(() => {
-        if(!task.segment)
-            return;
+  // get sections of the selected segment
+  useEffect(() => {
+    if (!task.segment) return;
 
-        setData((prevData) => {
-            return {...prevData, sections : prevData.segments[prevData.segments.findIndex((segment) => {
-                return segment.value === task.segment;
-            })]['sections'].map((section) => ({ value : section, label : section}))}
-        })
-    }, [task.segment])
-
+    setData((prevData) => {
+      return {
+        ...prevData,
+        sections: prevData.segments[
+          prevData.segments.findIndex((segment) => {
+            return segment.value === task.segment;
+          })
+        ]["sections"].map((section) => ({ value: section, label: section })),
+      };
+    });
+  }, [task.segment]);
 
     // handle submission of the task
     async function handleTaskSubmit(e){
@@ -145,42 +169,43 @@ export default function CreateTask(){
         })
     }
 
-    // event handler for handling changes in select
-    const handleSelectChange = (select, spec) => {
-        setTask((prevTask) => ({...prevTask, [spec] : select.value}));
-        console.log(`Option selected:`, select.value);
-    };
+  // event handler for handling changes in select
+  const handleSelectChange = (select, spec) => {
+    setTask((prevTask) => ({ ...prevTask, [spec]: select.value }));
+    console.log(`Option selected:`, select.value);
+  };
 
-    // event handler for handling project title and desc input
-    function handleChange(event){
-        const { name, value } = event.target;
-        setTask((prevTask) => ({...prevTask, [name] : value}));
-    }
+  // event handler for handling project title and desc input
+  function handleChange(event) {
+    const { name, value } = event.target;
+    setTask((prevTask) => ({ ...prevTask, [name]: value }));
+  }
 
-    // event handler for handling changes in tag selection
-    function handleTagsEdit(event, tagID){
-        const checked = event.target.checked;
-        if(checked)
-            // add tagID in tags array of task object if checkbox is checked
-            setTask((prevTask) => ({...prevTask, tags : [...prevTask.tags, tagID]}));
-        else
-            // remove tagID from tags array of task object if checkbox is unchecked
-            setTask((prevTask) => ({...prevTask, tags : [...prevTask.tags.filter((tag) => tag !== tagID)]}));
-    }
+  // event handler for handling changes in tag selection
+  function handleTagsEdit(event, tagID) {
+    const checked = event.target.checked;
+    if (checked)
+      // add tagID in tags array of task object if checkbox is checked
+      setTask((prevTask) => ({ ...prevTask, tags: [...prevTask.tags, tagID] }));
+    // remove tagID from tags array of task object if checkbox is unchecked
+    else
+      setTask((prevTask) => ({
+        ...prevTask,
+        tags: [...prevTask.tags.filter((tag) => tag !== tagID)],
+      }));
+  }
 
-    // event handler for handling project duration selection(hours, days, weeks)
-    function handleDurationEdit(event, durationName){
-        const checked = event.target.checked;
-        if(checked){
-            // add duration name at end of duration text if radio button of that duration name is checked
-            setTask((prevTask) => (
-                {
-                    ...prevTask, 
-                    duration: `${Number(prevTask.duration.split(" ")[0])} ${durationName}`
-                }
-            ));
-        }
+  // event handler for handling project duration selection(hours, days, weeks)
+  function handleDurationEdit(event, durationName) {
+    const checked = event.target.checked;
+    if (checked) {
+      // add duration name at end of duration text if radio button of that duration name is checked
+      setTask((prevTask) => ({
+        ...prevTask,
+        duration: `${Number(prevTask.duration.split(" ")[0])} ${durationName}`,
+      }));
     }
+  }
 
     // event handler for handling duration quantity edit
     function handleDurationQuantityEdit(event){
@@ -210,35 +235,69 @@ export default function CreateTask(){
         </label>
     )
 
-    // construct an array of mods to be rendered
-    const modOptions = data.contributors.filter((contributor) => {
-        return contributor.ROLE >= 3;
-    })
+  // construct an array of mods to be rendered
+  const modOptions = data.contributors.filter((contributor) => {
+    return contributor.ROLE >= 3;
+  });
 
-    // construct an array of duration names to be rendered
-    const durationOptions = durations.map((duration) => 
-        <label key={duration} htmlFor={duration}>
-            {duration}
-            <input 
-                name={"duration"} 
-                id={duration} 
-                type="radio" 
-                // if duration name present in the duraion text of task object then give true
-                checked={task.duration.split(" ")[1] === duration ? true : false}
-                onChange={(e) => handleDurationEdit(e, duration)}
-            />
-        </label>
-    )
+  // construct an array of duration names to be rendered
+  const durationOptions = durations.map((duration) => (
+    <label key={duration} htmlFor={duration}>
+      {duration}
+      <input
+        name={"duration"}
+        id={duration}
+        type="radio"
+        // if duration name present in the duraion text of task object then give true
+        checked={task.duration.split(" ")[1] === duration ? true : false}
+        onChange={(e) => handleDurationEdit(e, duration)}
+      />
+    </label>
+  ));
 
-    // handle multi selection of moderators from dropdown
-    function handleModsSelect(moderators){
-        setTask((prevTask) => (
-            {...prevTask, moderators : moderators.map((moderator) => {
-                return moderator.EMAIL;
-            })}
-        ));
+  // handle multi selection of moderators from dropdown
+  function handleModsSelect(moderators) {
+    setTask((prevTask) => ({
+      ...prevTask,
+      moderators: moderators.map((moderator) => {
+        return moderator.EMAIL;
+      }),
+    }));
+  }
+
+  //   Handler for handling the image drop
+  function handleImageDrop(e) {
+    e.preventDefault();
+    setDragging(false);
+    const file = e.dataTransfer.files[0];
+    if ((task, file)) {
+      setUploadMessage(`Uploading ${file.name}...`);
+      console.log("File", file);
+      uploadImage(task, file).then((url) => {
+        console.log("IMAGE URL from store", url);
+        const cursorPosition = descriptionRef.current.selectionStart;
+        const newDescription =
+          task.description.slice(0, cursorPosition) +
+          `![Image](${url})` +
+          task.description.slice(cursorPosition);
+
+        setTask((prevTask) => ({ ...prevTask, description: newDescription }));
+        setUploadMessage(null);
+      });
     }
+  }
 
+  // event handler for handling drag enter
+  function handleDragEnter(e) {
+    e.preventDefault();
+    setDragging(true);
+  }
+
+  // event handler for handling drag leave
+  function handleDragLeave(e) {
+    e.preventDefault();
+    setDragging(false);
+  }
 
     // render task form
     return (
@@ -376,13 +435,12 @@ export default function CreateTask(){
                     />
                 </fieldset>
 
-                {/* tags select */}
-                <fieldset className={styles.taskTags}>
-                    <legend>Tags</legend>
-                    {tagOptions}
-                </fieldset>
-
-            </form>
-        </>
-    )
+        {/* tags select */}
+        <fieldset className={styles.taskTags}>
+          <legend>Tags</legend>
+          {tagOptions}
+        </fieldset>
+      </form>
+    </>
+  );
 }
