@@ -47,37 +47,32 @@ export default function CreateTask() {
     tags: [],
   });
 
-  // task object to be submitted to database
-  const [task, setTask] = useState({
-    id: "",
-    title: "",
-    description: "",
+    // task object to be submitted to database
+    const [task, setTask] = useState({
+        id : "",
+        title : "",
+        description : "",
+        
+        difficulty : undefined,
+        priority : undefined,
+        status : 4, // how does this work?
+        
+        assignee : undefined,
+        assigner : "piyushya012@gmail.com", // the user creating the task
+        moderators : [],
 
-    difficulty: undefined,
-    priority: undefined,
-    status: 0,
+        time_STAMP : "",
+        duration : "1 day",
+        tags : [], // array
 
-    assignee: undefined,
-    assigner: "", // the user creating the task
-    moderators: [],
+        project_ID : undefined,
+        segment : undefined,
+        section : undefined,
+        type : undefined,
 
-    time_STAMP: "",
-    duration: "1 day",
-    tags: [], // array
-    
-    project_ID: undefined,
-    segment: undefined,
-    section: undefined,
-    type: undefined,
-    
-    last_updated: "", // Timestamp
-});
-
-// For Image Uploads
-const descriptionRef = useRef(null);
-const [dragging, setDragging] = useState(false);
-const [uploadMessage, setUploadMessage] = useState(null);
-
+        last_updated : "", // Timestamp
+        version: 4, // wht is this?
+    })
 
 // get projects on page load
 useEffect(() => {

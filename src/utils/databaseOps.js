@@ -5,6 +5,8 @@ import generateRandomFileName from "../helpers/generateRandomFileName";
 
 async function addTask(task) {
   task.id = `#T${Math.floor(Math.random() * 900000 + 100000)}`;
+  task.time_STAMP = new Date();
+  task.last_updated = task.time_STAMP;
   const collectionPath = `Projects/${task.project_ID}/TASKS`;
   const docRef = doc(db, collectionPath, task.id);
   await setDoc(docRef, task);
