@@ -7,8 +7,11 @@ import {
 import { collection, getDoc, setDoc, doc } from "firebase/firestore";
 import styles from "./Login.module.css";
 import ForgotPassword from "./ForgotPassword";
+import { useNavigate, useLocation } from "react-router-dom";
 
 export default function Login() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
@@ -41,6 +44,7 @@ export default function Login() {
           setUserData(userDoc.data());
           console.log("User logged in successfully!");
           alert("Authenticated!");
+          navigate("/create-task", { state: { userData: userDoc?.data()} });
         } else {
           console.log("User document does not exist.");
         }
@@ -77,6 +81,7 @@ export default function Login() {
           setUserData(newUserDoc.data());
           console.log("User signed up successfully!");
           alert("Authenticated!");
+          navigate("/create-task", { state: { userData: newUserDoc?.data()} });
         } else {
           console.log("Newly created user document does not exist.");
         }
@@ -155,7 +160,7 @@ export default function Login() {
             {loading ? "Hold on..." : isLogin ? "Login" : "Sign Up"}
           </button>
         </form>
-        <p onClick={() => setIsLogin(!isLogin)}>
+        {/* <p onClick={() => setIsLogin(!isLogin)}>
           {isLogin ? (
             <p className={styles.link}>
               {" "}
@@ -168,7 +173,7 @@ export default function Login() {
               <span className={styles.linkN}>Login</span> here.
             </p>
           )}
-        </p>
+        </p> */}
       </div>
     </div>
   );

@@ -9,8 +9,12 @@ import {
   uploadImage,
 } from "../../utils/databaseOps";
 import styles from "./CreateTask.module.css";
+import { useLocation } from "react-router-dom";
 
 export default function CreateTask() {
+  // Bas 3 lines merge karni hai
+  const location = useLocation();
+  console.log("User Data", location.state?.userData);
   // hardcoded values
 
   const priorities = [
@@ -47,35 +51,40 @@ export default function CreateTask() {
     tags: [],
   });
 
-    // task object to be submitted to database
-    const [task, setTask] = useState({
-        id : "",
-        title : "",
-        description : "",
-        
-        difficulty : undefined,
-        priority : undefined,
-        status : 4, // how does this work?
-        
-        assignee : undefined,
-        assigner : "piyushya012@gmail.com", // the user creating the task
-        moderators : [],
+  // task object to be submitted to database
+  const [task, setTask] = useState({
+    id: "",
+    title: "",
+    description: "",
 
-        time_STAMP : "",
-        duration : "1 day",
-        tags : [], // array
+    difficulty: undefined,
+    priority: undefined,
+    status: 4, // how does this work?
 
-        project_ID : undefined,
-        segment : undefined,
-        section : undefined,
-        type : undefined,
+    assignee: undefined,
+    assigner: "piyushya012@gmail.com", // the user creating the task
+    moderators: [],
 
-        last_updated : "", // Timestamp
-        version: 4, // wht is this?
-    })
+    time_STAMP: "",
+    duration: "1 day",
+    tags: [], // array
 
-// get projects on page load
-useEffect(() => {
+    project_ID: undefined,
+    segment: undefined,
+    section: undefined,
+    type: undefined,
+
+    last_updated: "", // Timestamp
+    version: 4, // wht is this?
+  });
+
+  // For Image Uploads
+  const descriptionRef = useRef(null);
+  const [dragging, setDragging] = useState(false);
+  const [uploadMessage, setUploadMessage] = useState(null);
+
+  // get projects on page load
+  useEffect(() => {
     getProjects().then((projects) => {
       setData((prevData) => {
         return {
@@ -299,7 +308,7 @@ useEffect(() => {
     if ((task, file)) {
       setUploadMessage(`Uploading ${file.name}...`);
       console.log("File", file);
-      uploadImage(task,file).then((url) => {
+      uploadImage(task, file).then((url) => {
         console.log("IMAGE URL from store", url);
         const cursorPosition = descriptionRef.current.selectionStart;
         const newDescription =
