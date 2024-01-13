@@ -1,3 +1,19 @@
+.taskSubmit {
+    background-color: rgb(255, 94, 0);
+    color: #fff;
+    border: none;
+    font-size: 1rem;
+    margin-top: 0.8rem;
+    padding: 10px;
+    font-weight: bold;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.taskSubmit:hover {
+    background-color: #c1450b;
+}
+
 .selectElement{
     color: black;
     width: 8rem;
@@ -34,12 +50,12 @@
     flex-wrap: wrap;
 }
 
-.taskSpecs label{
+/* .taskSpecs label{
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
     color: rgb(155, 155, 155);
-}
+} */
 
 .taskSpecs select{
     color: rgb(0, 0, 0);
@@ -56,6 +72,10 @@
     flex-direction: column;
     padding: 0rem 2rem 1.5rem 2rem;
     gap: 1rem;
+}
+
+.taskTitle{
+    padding: 1rem;
 }
 
 .taskInfo textarea{
@@ -78,6 +98,10 @@
     display: flex;
     gap: 1rem;
     flex-wrap: wrap;
+}
+
+.taskMods .selectElement{
+    width: 100%;
 }
 
 .taskTags label, .taskMods label{

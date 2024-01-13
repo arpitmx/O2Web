@@ -2,6 +2,7 @@ import Select from 'react-select'
 import { useEffect, useState } from "react";
 import { addTask, getTags, getSegments, getContributors, getProjects } from "../../utils/databaseOps";
 import styles from "./CreateTask.module.css";
+import SummaryEdit from './components/SummaryEdit';
 
 export default function CreateTask(){
 
@@ -43,34 +44,29 @@ export default function CreateTask(){
 
     // task object to be submitted to database
     const [task, setTask] = useState({
-        id : "",
+        id : undefined,
         title : "",
         description : "",
-        
         difficulty : undefined,
         priority : undefined,
-        status : 4, // how does this work?
-        
+        status : 1,
         assignee : undefined,
-        assigner : "piyushya012@gmail.com", // the user creating the task
+        assigner : "piyushya012@gmail.com", // get the assigner from login page
         moderators : [],
-
-        time_STAMP : "",
+        time_STAMP : undefined,
         duration : "1 day",
         tags : [], // array
-
         project_ID : undefined,
         segment : undefined,
         section : undefined,
         type : undefined,
-
-        last_updated : "", // Timestamp
-        version: 4, // wht is this?
+        last_updated : undefined,
+        version: 4,
     })
 
     // get projects on page load
     useEffect(() => {
-        getProjects().then((projects) => {
+        getProjects(task.assigner).then((projects) => {
             setData((prevData) => {
                 return {...prevData, projects : projects ? projects.map((project) => {
                     return {value : project, label : project}
@@ -99,8 +95,6 @@ export default function CreateTask(){
                     return {value : segment[0], label : segment[0], sections : segment[1]}
                 }) : []};
             })
-            // set default segment of the project
-            // setTask((prevTask) => ({...prevTask, segment : segmentData[0]}));
         });
 
         // get constibutors of the selected project
@@ -110,11 +104,6 @@ export default function CreateTask(){
                     return {...contributor, value : contributor.EMAIL, label : contributor.USERNAME}
                 }) : []};
             })
-            // set default assignee of the task
-            // setTask((prevTask) => ({
-            //     ...prevTask, 
-            //     assignee : contributorsData[0].USERNAME,
-            // }));
         });
 
         return () => {
@@ -147,16 +136,13 @@ export default function CreateTask(){
         if(Object.values(task).includes(undefined)){
             alert("form not complete");
         }
-        console.info(task);
-        // else{
-        //     console.info(task);
+        
         addTask(task).then(() => {
             alert("task added succesfully");
         }).catch((error) => {
             console.log(error)
             alert("error adding task");
         })
-        // }
     }
 
     // event handler for handling changes in select
@@ -212,7 +198,7 @@ export default function CreateTask(){
                 color: tagName.textColor,
             }}
         >
-            {tagName.tagText} :
+            {tagName.tagText}
             <input 
                 name={"tag"} 
                 id={tagName.tagID} 
@@ -273,6 +259,7 @@ export default function CreateTask(){
                         autoFocus={true}
                         className={styles.selectElement}
                         placeholder={"Project"}
+                        required
                     />
 
                     {/* priority select dropdown*/}
@@ -282,6 +269,7 @@ export default function CreateTask(){
                         autoFocus={true}
                         className={styles.selectElement}
                         placeholder={"Priority"}
+                        required
                     />
 
                     {/* Type select dropdown*/}
@@ -291,6 +279,7 @@ export default function CreateTask(){
                         autoFocus={true}
                         className={styles.selectElement}
                         placeholder={"Type"}
+                        required
                     />
 
                     {/* Difficulty select dropdown*/}
@@ -300,6 +289,7 @@ export default function CreateTask(){
                         autoFocus={true}
                         className={styles.selectElement}
                         placeholder={"Difficulty"}
+                        required
                     />
 
                     {/* Assignee select dropdown*/}
@@ -309,6 +299,7 @@ export default function CreateTask(){
                         autoFocus={true}
                         className={styles.selectElement}
                         placeholder={"Assignee"}
+                        required
                     />
                 </div>
 
@@ -321,6 +312,7 @@ export default function CreateTask(){
                         autoFocus={true}
                         className={styles.selectElement}
                         placeholder={"Segment"}
+                        required
                     />
                     {">"}
 
@@ -331,6 +323,7 @@ export default function CreateTask(){
                         autoFocus={true}
                         className={styles.selectElement}
                         placeholder={"Section"}
+                        required
                     />
                 </div>
                 
@@ -342,20 +335,15 @@ export default function CreateTask(){
                         type="text" 
                         value={task.title} 
                         name="title" 
+                        className={styles.taskTitle}
                         onChange={handleChange} 
                         placeholder="Title"
+                        required
                     />
 
-                    {/* description textarea */}
-                    <textarea 
-                        id="description" 
-                        type="text" 
-                        value={task.description} 
-                        name="description" 
-                        onChange={handleChange} 
-                        placeholder="Write Task Summary here..."
-                        rows="7"
-                    />
+                    {/* Summary edit box */}
+                    <SummaryEdit description={task.description} handleChange={handleChange}/>
+
                 </div>
 
                 {/* duration edit section */}
@@ -368,6 +356,7 @@ export default function CreateTask(){
                         max="100"
                         value={Number(task.duration.split(" ")[0])} 
                         onChange={handleDurationQuantityEdit}
+                        required
                     />
                     {/* duration type */}
                     {durationOptions}
@@ -383,6 +372,7 @@ export default function CreateTask(){
                         placeholder={"Moderators"}
                         closeMenuOnSelect={false}
                         className={styles.selectElement}
+                        required
                     />
                 </fieldset>
 
