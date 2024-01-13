@@ -1,179 +1,102 @@
-import React, { useEffect, useState } from "react";
-import { auth, db } from "../../../firebase";
-import {
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-} from "firebase/auth";
-import { collection, getDoc, setDoc, doc } from "firebase/firestore";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { auth, logInWithEmailAndPassword } from "../../../firebase";
+import { useAuthState } from "react-firebase-hooks/auth";
+import { getUserData } from "../../utils/databaseOps";
 import styles from "./Login.module.css";
-import ForgotPassword from "./ForgotPassword";
-import { useNavigate, useLocation } from "react-router-dom";
 
 export default function Login() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [username, setUsername] = useState("");
-  const [isLogin, setIsLogin] = useState(true);
+  const [formData, setFormData] = React.useState({
+    email: "",
+    password: "",
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [userData, setUserData] = useState(null);
-  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [user] = useAuthState(auth);
+  const navigate = useNavigate();
 
-  const handleAuth = async () => {
-    try {
-      setError(null);
-      setLoading(true);
-
-      const documentId = email;
-
-      if (isLogin) {
-        // Login
-        const userCredential = await signInWithEmailAndPassword(
-          auth,
-          email,
-          password
-        );
-
-        // Fetch user data from the "Users" collection
-        const userDoc = await getDoc(doc(db, "Users", documentId));
-
-        if (userDoc.exists()) {
-          // Set user data in state
-          setUserData(userDoc.data());
-          console.log("User logged in successfully!");
-          alert("Authenticated!");
-          navigate("/create-task", { state: { userData: userDoc?.data()} });
-        } else {
-          console.log("User document does not exist.");
-        }
-      } else {
-        // Signup
-        const userCredential = await createUserWithEmailAndPassword(
-          auth,
-          email,
-          password
-        );
-
-        // Add user data to the "Users" collection
-        const usersCollection = collection(db, "Users");
-        await setDoc(doc(usersCollection, documentId), {
-          EMAIL: email,
-          // Add other user data as needed
-          /////////////////////////////////////////////////////
-          USERNAME: username,
-          DESIGNATION: "Developer",
-          BIO: "",
-          DP_URL: "",
-          DETAILS_ADDED: false,
-          PHOTO_ADDED: false,
-          PROJECTS: [],
-          ROLE: 0,
-          /////////////////////////////////////////////////////
-        });
-
-        // Fetch the newly added user data from the "Users" collection
-        const newUserDoc = await getDoc(doc(db, "Users", documentId));
-
-        if (newUserDoc.exists()) {
-          // Set user data in state
-          setUserData(newUserDoc.data());
-          console.log("User signed up successfully!");
-          alert("Authenticated!");
-          navigate("/create-task", { state: { userData: newUserDoc?.data()} });
-        } else {
-          console.log("Newly created user document does not exist.");
-        }
-      }
-    } catch (error) {
-      const errorCode = error.code;
-      const errorMessage = error.message;
-      setError(errorMessage);
-      console.error("Authentication error:", errorCode, errorMessage);
-    } finally {
-      setLoading(false);
+  React.useEffect(() => {
+    if (user) {
+      getUserData(auth.currentUser.email).then((userData) => {
+        navigate("/create-task", { state: { userData : userData } });
+      })
+      .finally(() => {
+        setLoading(false);
+      })
     }
-  };
+  }, [user]);
 
-  useEffect(() => {
-    ///////////////////////firebase might be preventing it from extracting///////////////
-    console.log("userData", userData);
-  }, [userData]);
+  function handleChange(event) {
+    const { name, value } = event.target;
+    setFormData((prevFormData) => {
+      return {
+        ...prevFormData,
+        [name]: value,
+      };
+    });
+  }
+
+  async function handleSubmit(e) {
+    setLoading(true);
+    setError(null);
+    e.preventDefault();
+    logInWithEmailAndPassword(formData.email, formData.password)
+    .catch((error) => {
+      setLoading(false);
+      switch(error.code) {
+        case 'auth/user-not-found':
+          setError("Email not registered");
+          console.error("email not registered");
+          break;
+        case 'auth/wrong-password':
+          setError("Incorrect password");
+          console.error("wrong password");
+          break;
+        default: 
+          setError("Network issue");
+          console.log("network issue");
+     }
+    })
+  }
+
   return (
     <div className={styles.container}>
       <div className={styles.card}>
         {error && <p className={styles.error}>{error}</p>}
-        <h2 className={styles.header}>{isLogin ? "Login" : "Sign Up"}</h2>
+        <h2 className={styles.header}>Login</h2>
         <div className={styles.greet}>
           <p className={styles.greetline}>Hello there !</p>
-          {isLogin ? (
-            <p className={styles.greetline}>Welcome Back</p>
-          ) : (
-            <p className={styles.greetline}>Welcome to O2 </p>
-          )}
+          <p className={styles.greetline}>Welcome to O2 </p>
         </div>
-        <form className={styles.form}>
-          {isLogin ? (
-            ""
-          ) : (
-            <input
-              type="text"
-              value={username}
-              className={styles.input}
-              placeholder="Username"
-              onChange={(e) => setUsername(e.target.value)}
-            />
-          )}
+        <form className={styles.form} onSubmit={handleSubmit}>
           <input
+            id="email"
+            className={styles.input}
             type="email"
-            value={email}
-            className={styles.input}
+            name="email"
+            value={formData.email}
             placeholder="Email"
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={handleChange}
+            required
           />
           <input
-            type="password"
-            value={password}
+            id="password"
             className={styles.input}
+            type="password"
+            name="password"
+            value={formData.password}
             placeholder="Password"
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={handleChange}
+            required
           />
-          {isLogin ? (
-            <div className={styles.forgotwrap}>
-              <p
-                onClick={() => alert("Forgot password clicked")}
-                className={styles.forgot}
-              >
-                Forgot password?
-              </p>
-            </div>
-          ) : (
-            ""
-          )}
-          {showForgotPassword && <ForgotPassword />}
           <button
+            type="submit"
             className={styles.button}
-            onClick={handleAuth}
             disabled={loading}
           >
-            {loading ? "Hold on..." : isLogin ? "Login" : "Sign Up"}
+            {loading ? "Hold on..." : "Login"}
           </button>
         </form>
-        {/* <p onClick={() => setIsLogin(!isLogin)}>
-          {isLogin ? (
-            <p className={styles.link}>
-              {" "}
-              Don't have an account?{" "}
-              <span className={styles.linkN}>Sign up</span> here.
-            </p>
-          ) : (
-            <p className={styles.link}>
-              Already have an account?{" "}
-              <span className={styles.linkN}>Login</span> here.
-            </p>
-          )}
-        </p> */}
       </div>
     </div>
   );

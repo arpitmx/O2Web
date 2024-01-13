@@ -1,4 +1,25 @@
+.btnCont{
+    display: flex;
+    gap: 1rem;
+}
+
 .taskSubmit {
+    background-color: rgb(0, 164, 11);
+    color: rgb(255, 255, 255);
+    border: none;
+    font-size: 1rem;
+    margin-top: 0.8rem;
+    padding: 10px;
+    font-weight: bold;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.taskSubmit:hover {
+    background-color: rgb(0, 133, 9);
+}
+
+.logoutBtn{
     background-color: rgb(255, 94, 0);
     color: #fff;
     border: none;
@@ -10,8 +31,8 @@
     cursor: pointer;
 }
 
-.taskSubmit:hover {
-    background-color: #c1450b;
+.logoutBtn:hover {
+    background-color: rgb(188, 69, 0);
 }
 
 .selectElement{

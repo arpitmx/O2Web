@@ -1,13 +1,10 @@
-import { db, storage } from "../../firebase";
+import { db } from "../../firebase";
 import { doc, getDocs, getDoc, setDoc, collection } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import generateRandomFileName from "../helpers/generateRandomFileName";
-import {signOut} from "firebase/auth";
 
-
-const logout = () => {
-  signOut(auth);
-};
+async function getUserData(email){
+  const userDoc = await getDoc(doc(db, "Users", email));
+  return userDoc.data();
+}
 
 async function addTask(task) {
   task.id = `#${(task.project_ID.substr(0, 2)+task.project_ID.at(-1)).toUpperCase()}-${Math.floor(Math.random() * 9000 + 1000)}`;
@@ -17,9 +14,9 @@ async function addTask(task) {
 
   // uncomment below line to allow task addition in database
 
-  // const collectionPath = `Projects/${task.project_ID}/TASKS`;
-  // const docRef = doc(db, collectionPath, task.id);
-  // await setDoc(docRef, task);
+  const collectionPath = `Projects/${task.project_ID}/TASKS`;
+  const docRef = doc(db, collectionPath, task.id);
+  await setDoc(docRef, task);
 }
 
 async function getProjects(assigner) {
@@ -65,17 +62,7 @@ async function getContributors(project_ID) {
   }
 }
 
-// Function to upload image to Firebase Storage
-export const uploadImage = async (task, file) => {
-  console.log("IMAGE UPLOAD PATH",`Projects/${task.project_ID}/${generateRandomFileName()}`)
-  const imageRef = ref(storage, `Projects/${task.project_ID}/${generateRandomFileName()}`);
-  await uploadBytes(imageRef, file);
-
-  const downloadURL = await getDownloadURL(imageRef);
-  return downloadURL;
-};
-
-export { addTask, getProjects, getSegments, getTags, getContributors };
+export { addTask, getProjects, getSegments, getTags, getContributors, getUserData };
 
 
 // async function getProjects(){

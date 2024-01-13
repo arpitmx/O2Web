@@ -14,7 +14,7 @@ export default function SummaryEdit({description, handleChange}){
                 className={styles.summaryBox}
                 name="description" 
                 onChange={handleChange} 
-                placeholder="Trivial Summary Editor, needs upgrade, styling upgrade required throughout the page, show label for different dropdowns"
+                placeholder="Task Summary"
                 rows="7"
                 required
             />

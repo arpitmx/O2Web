@@ -1,15 +1,13 @@
 import Select from "react-select";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import { useAuthState } from "react-firebase-hooks/auth";
 import {
   addTask,
   getTags,
   getSegments,
   getContributors,
-  getProjects,
-  uploadImage,
-  logout
 } from "../../utils/databaseOps";
-
+import { auth, logout} from "../../../firebase";
 import styles from "./CreateTask.module.css";
 import { useNavigate, useLocation } from "react-router-dom";
 import SummaryEdit from './components/SummaryEdit';
@@ -17,6 +15,24 @@ import SummaryEdit from './components/SummaryEdit';
 export default function CreateTask() {
   const location = useLocation();
   const navigate = useNavigate();
+
+  function handleLogout(){
+    if(!user){
+        navigate('/');
+    }
+    logout();
+  }
+
+  //If the user logs out redirect to login page
+  const [user, loading] = useAuthState(auth);
+  useEffect(() => {
+      if(loading){
+          return;
+      }
+      if (!user){
+          navigate("/");
+      }
+  }, [user]);
 
   // hardcoded values
   const priorities = [
@@ -46,7 +62,9 @@ export default function CreateTask() {
 
   // values per project basis
   const [data, setData] = useState({
-    projects: [],
+    projects: location.state?.userData.PROJECTS.map((project) => {
+      return {value : project, label : project}
+    }),
     segments: [],
     sections: [],
     contributors: [],
@@ -75,27 +93,9 @@ export default function CreateTask() {
         version: 4,
     })
 
-    function logout(){
-        navigate("/");
-    }
-
-    // get projects on page load
-    useEffect(() => {
-        if(!location.state?.userData)
-            logout();
-        setData((prevData) => {
-            return {...prevData, projects : location.state?.userData.PROJECTS.map((project) => {
-                return {value : project, label : project}
-            })}
-        })
-        // getProjects(task.assigner).then((projects) => {
-        //     setData((prevData) => {
-        //         return {...prevData, projects : projects ? projects.map((project) => {
-        //             return {value : project, label : project}
-        //         }) : [] }
-        //     })
-        // })
-    }, [location.state?.userData])
+    // function logout(){
+    //     navigate("/");
+    // }
 
   // get project specific data when new project is selected
   useEffect(() => {
@@ -103,7 +103,6 @@ export default function CreateTask() {
 
     // get tags of the selected project
     getTags(task.project_ID).then((tagsData) => {
-      console.log(tagsData);
       setData((prevData) => {
         return { ...prevData, tags: tagsData ? [...tagsData] : [] };
       });
@@ -172,7 +171,7 @@ export default function CreateTask() {
   // event handler for handling changes in select
   const handleSelectChange = (select, spec) => {
     setTask((prevTask) => ({ ...prevTask, [spec]: select.value }));
-    console.log(`Option selected:`, select.value);
+    // console.log(`Option selected:`, select.value);
   };
 
   // event handler for handling project title and desc input
@@ -265,49 +264,20 @@ export default function CreateTask() {
     }));
   }
 
-  //   Handler for handling the image drop
-  function handleImageDrop(e) {
-    e.preventDefault();
-    setDragging(false);
-    const file = e.dataTransfer.files[0];
-    if ((task, file)) {
-      setUploadMessage(`Uploading ${file.name}...`);
-      console.log("File", file);
-      uploadImage(task, file).then((url) => {
-        console.log("IMAGE URL from store", url);
-        const cursorPosition = descriptionRef.current.selectionStart;
-        const newDescription =
-          task.description.slice(0, cursorPosition) +
-          `![Image](${url})` +
-          task.description.slice(cursorPosition);
-
-        setTask((prevTask) => ({ ...prevTask, description: newDescription }));
-        setUploadMessage(null);
-      });
-    }
-  }
-
-  // event handler for handling drag enter
-  function handleDragEnter(e) {
-    e.preventDefault();
-    setDragging(true);
-  }
-
-  // event handler for handling drag leave
-  function handleDragLeave(e) {
-    e.preventDefault();
-    setDragging(false);
-  }
-
     // render task form
     return (
         <>
             <form className={styles.form} onSubmit={handleTaskSubmit}>
                 <div className={styles.header}>
                     <h1>New Task</h1>
-                    <button type="submit" className={styles.taskSubmit}>
-                        Create Task
-                    </button>
+                    <div className={styles.btnCont}>
+                      <button type="submit" className={styles.taskSubmit}>
+                          Create Task
+                      </button>
+                      <button type="button" className={styles.logoutBtn} onClick={handleLogout}>
+                          Logout
+                      </button>
+                    </div>
                 </div>
                 <div className={styles.taskSpecs}>
                     
