@@ -1,14 +1,12 @@
 body {
-    font-family: 'Arial', sans-serif;
-    background-color: #111;
+  font-family: "Arial", sans-serif;
+  background-color: #111;
 
-    /* This is not good rohit 🤬🤬🤬🤬🤬*/
-    /* display: flex;
+  /* This is not good rohit 🤬🤬🤬🤬🤬*/
+  /* display: flex;
     align-items: center;
     justify-content: center; */
 
-    height: 100vh;
-    margin: 0;
-  }
-  
-  
+  height: 100vh;
+  margin: 0;
+}

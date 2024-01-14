@@ -1,5 +1,5 @@
 import Select from "react-select";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuthState } from "react-firebase-hooks/auth";
 import {
   addTask,
@@ -132,7 +132,6 @@ export default function CreateTask() {
         ...prevTask,
         moderators: [],
         tags: [],
-        segment: undefined,
       }));
     };
   }, [task.project_ID]);
@@ -156,10 +155,7 @@ export default function CreateTask() {
     // handle submission of the task
     async function handleTaskSubmit(e){
         e.preventDefault();
-        if(Object.values(task).includes(undefined)){
-            alert("form not complete");
-        }
-        
+        // console.log(task);
         addTask(task).then(() => {
             alert("task added succesfully");
         }).catch((error) => {
@@ -269,7 +265,8 @@ export default function CreateTask() {
         <>
             <form className={styles.form} onSubmit={handleTaskSubmit}>
                 <div className={styles.header}>
-                    <h1>New Task</h1>
+                    <img className={styles.logoImg} src="./O2logo.png" alt="O2 logo"/>
+                    {/* <h1>New Task</h1> */}
                     <div className={styles.btnCont}>
                       <button type="submit" className={styles.taskSubmit}>
                           Create Task
@@ -282,92 +279,116 @@ export default function CreateTask() {
                 <div className={styles.taskSpecs}>
                     
                     {/* Project_ID select dropdown*/}
-                    <Select
-                        options={data.projects}
-                        onChange={(select) => handleSelectChange(select, "project_ID")}
-                        autoFocus={true}
-                        className={styles.selectElement}
-                        placeholder={"Project"}
-                        required
-                    />
+                    <fieldset>
+                      <legend>Project</legend>
+                      <Select
+                          options={data.projects}
+                          onChange={(select) => handleSelectChange(select, "project_ID")}
+                          autoFocus={true}
+                          className={styles.selectElement}
+                          placeholder={"Project"}
+                          required
+                      />
+                    </fieldset>
+                    
 
                     {/* priority select dropdown*/}
-                    <Select
-                        options={priorities}
-                        onChange={(select) => handleSelectChange(select, "priority")}
-                        autoFocus={true}
-                        className={styles.selectElement}
-                        placeholder={"Priority"}
-                        required
-                    />
+                    <fieldset>
+                      <legend>Priority</legend>
+                      <Select
+                          options={priorities}
+                          onChange={(select) => handleSelectChange(select, "priority")}
+                          autoFocus={true}
+                          className={styles.selectElement}
+                          placeholder={"Priority"}
+                          required
+                      />
+                    </fieldset>
+                    
 
                     {/* Type select dropdown*/}
-                    <Select
-                        options={types}
-                        onChange={(select) => handleSelectChange(select, "type")}
-                        autoFocus={true}
-                        className={styles.selectElement}
-                        placeholder={"Type"}
-                        required
-                    />
-
+                    <fieldset>
+                      <legend>Type</legend>
+                      <Select
+                          options={types}
+                          onChange={(select) => handleSelectChange(select, "type")}
+                          autoFocus={true}
+                          className={styles.selectElement}
+                          placeholder={"Type"}
+                          required
+                      />
+                    </fieldset>
+                    
                     {/* Difficulty select dropdown*/}
-                    <Select
+                    <fieldset>
+                      <legend>Difficulty</legend>
+                      <Select
                         options={difficulties}
                         onChange={(select) => handleSelectChange(select, "difficulty")}
                         autoFocus={true}
                         className={styles.selectElement}
                         placeholder={"Difficulty"}
                         required
-                    />
+                      />
+                    </fieldset>
+                    
 
                     {/* Assignee select dropdown*/}
-                    <Select
+                    <fieldset>
+                      <legend>Assignee</legend>
+                      <Select
                         options={data.contributors}
                         onChange={(select) => handleSelectChange(select, "assignee")}
                         autoFocus={true}
                         className={styles.selectElement}
                         placeholder={"Assignee"}
                         required
-                    />
+                      />
+                    </fieldset>
                 </div>
 
                 <div className={styles.taskPhase}>
 
                     {/* segment select dropdown*/}
-                    <Select
+                    <fieldset>
+                      <legend>Segment</legend>
+                      <Select
                         options={data.segments}
                         onChange={(select) => handleSelectChange(select, "segment")}
                         autoFocus={true}
                         className={styles.selectElement}
                         placeholder={"Segment"}
                         required
-                    />
-                    {">"}
+                      />
+                    </fieldset>
+
+                    {/* {">"} */}
 
                     {/* section select dropdown*/}
-                    <Select
+                    <fieldset>
+                      <legend>Section</legend>
+                      <Select
                         options={data.sections}
                         onChange={(select) => handleSelectChange(select, "section")}
                         autoFocus={true}
                         className={styles.selectElement}
                         placeholder={"Section"}
                         required
-                    />
+                      />
+                    </fieldset>
                 </div>
                 
                 <div className={styles.taskInfo}>
-
                     {/* title textbox */}
                     <input 
-                        id="title" 
-                        type="text" 
-                        value={task.title} 
-                        name="title" 
-                        className={styles.taskTitle}
-                        onChange={handleChange} 
-                        placeholder="Title"
-                        required
+                      id="title" 
+                      type="text" 
+                      value={task.title} 
+                      name="title" 
+                      className={styles.taskTitle}
+                      onChange={handleChange} 
+                      placeholder="Task Title"
+                      required
                     />
 
                     {/* Summary edit box */}
@@ -408,7 +429,7 @@ export default function CreateTask() {
         {/* tags select */}
         <fieldset className={styles.taskTags}>
           <legend>Tags</legend>
-          {tagOptions}
+          {tagOptions.length ? tagOptions : <p>No tags available</p>}
         </fieldset>
       </form>
     </>

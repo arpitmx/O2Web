@@ -14,9 +14,19 @@ async function addTask(task) {
 
   // uncomment below line to allow task addition in database
 
+  // add task to project tasks
   const collectionPath = `Projects/${task.project_ID}/TASKS`;
   const docRef = doc(db, collectionPath, task.id);
   await setDoc(docRef, task);
+
+  // add task to assignee workspace
+  const workspacePath = `Users/${task.assignee}/WORKSPACE`;
+  const taskRef = doc(db, workspacePath, task.id);
+  await setDoc(taskRef, {
+    id: task.id,
+    project_id: task.project_ID,
+    status: "Assigned",
+  });
 }
 
 async function getProjects(assigner) {
