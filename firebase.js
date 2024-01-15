@@ -1,7 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
-// import { getStorage } from "firebase/storage";
+import { getStorage } from "firebase/storage";
 // import firebaseConfig from "./firebaseConfig";
 
 const firebaseConfig = {
@@ -17,7 +17,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-// const storage = getStorage(app);
+const storage = getStorage(app);
 
 const logInWithEmailAndPassword = async (email, password) => {
   await signInWithEmailAndPassword(auth, email, password);
@@ -27,4 +27,4 @@ const logout = () => {
   signOut(auth);
 };
 
-export { auth, db, logInWithEmailAndPassword, logout };
+export { auth, db, storage, logInWithEmailAndPassword, logout };

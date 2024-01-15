@@ -371,7 +371,7 @@ export default function CreateTask() {
                     />
 
                     {/* Summary edit box */}
-                    <SummaryEdit description={task.description} handleChange={handleChange}/>
+                    <SummaryEdit description={task.description} handleChange={handleChange} task={task}/>
 
                 </div>
 
