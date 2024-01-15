@@ -1,3 +1,7 @@
+.logoImg{
+    width: 7rem;
+}
+
 .btnCont{
     display: flex;
     gap: 1rem;
@@ -135,4 +139,10 @@
 .modOption{
     background-color: blueviolet;
     color: white;
+}
+
+.form fieldset{
+    border: 2px solid rgba(255, 255, 255, 0.064);
+    border-radius: 0.5rem;
+    color: rgb(194, 194, 194);
 }
