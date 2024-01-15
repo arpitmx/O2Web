@@ -17,7 +17,7 @@ export default function Login() {
 
   React.useEffect(() => {
     if (user) {
-      getUserData(auth.currentUser.email).then((userData) => {
+      getUserData("rohitpandey73551@gmail.com").then((userData) => {
         navigate("/create-task", { state: { userData : userData } });
       })
       .finally(() => {
