@@ -5,12 +5,17 @@ import styles from "./SummaryEdit.module.css";
 import htmlToMd from "html-to-md";
 import { storage } from "../../../../firebase";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
-import generateRandomFileName from "../../../helpers/generateRandomFileName.js"
+import generateRandomFileName from "../../../helpers/generateRandomFileName.js";
 
 export default function SummaryEdit({ description, handleChange, task }) {
   const [value, setValue] = useState(description);
   const quillRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const [isUploading, setIsUploading] = useState(false);
   // UseEffect to run handleBlur function for value change
+  useEffect(() => {
+    handleBlur();
+  }, [value]);
 
   useEffect(() => {
     if (quillRef.current) {
@@ -20,11 +25,23 @@ export default function SummaryEdit({ description, handleChange, task }) {
     }
   }, []);
 
+  useEffect(() => {
+    if (fileInputRef.current) {
+      fileInputRef.current.addEventListener("change", handleImageUpload);
+    }
+
+    return () => {
+      if (fileInputRef.current) {
+        fileInputRef.current.removeEventListener("change", handleImageUpload);
+      }
+    };
+  }, [handleImageUpload]);
+
   async function handleBlur() {
-    let replacedValue = value.replace(/!\[image!]/g, 'uniquePlaceholder');
-    console.log("Before Markdown",replacedValue)
+    let replacedValue = value.replace(/!\[image!]/g, "uniquePlaceholder");
+    console.log("Before Markdown", replacedValue);
     let markdownValue = htmlToMd(replacedValue);
-    markdownValue = markdownValue.replace(/uniquePlaceholder/g, '![image!]');
+    markdownValue = markdownValue.replace(/uniquePlaceholder/g, "![image!]");
     console.log("Markdown Value after conversion", markdownValue);
     if (handleChange !== undefined) {
       handleChange({
@@ -52,18 +69,26 @@ export default function SummaryEdit({ description, handleChange, task }) {
     },
   };
 
-  async function handleImageUpload(files) {
-    console.log("Uploading Image!!!")
+  async function handleImageUpload() {
+    console.log("Uploading Image!!!");
+    setIsUploading(true);
+    const files = fileInputRef.current.files;
     const file = files[0];
-    const storageRef = ref(storage, `images/${task.project_ID}/${generateRandomFileName()}`);
+    const storageRef = ref(
+      storage,
+      `images/${task.project_ID}/${generateRandomFileName()}`
+    );
     await uploadBytes(storageRef, file);
 
     const downloadURL = await getDownloadURL(storageRef);
     insertImageToQuill(downloadURL);
+    // Set focus to ReactQuill after image upload
+    if (quillRef.current) {
+      quillRef.current.focus();
+    }
   }
 
   function insertImageToQuill(imageURL) {
-    console.log("Image Uploaded")
     const range = quillRef.current.getEditor().getSelection();
     const imagePath = `![image!](${imageURL})`;
     if (range) {
@@ -71,9 +96,9 @@ export default function SummaryEdit({ description, handleChange, task }) {
         .getEditor()
         .clipboard.dangerouslyPasteHTML(range.index, imagePath, "api");
     }
+    setIsUploading(false);
+    console.log("Image Uploaded");
   }
-
-  
 
   return (
     <>
@@ -87,7 +112,14 @@ export default function SummaryEdit({ description, handleChange, task }) {
         placeholder="Task Summary"
         onBlur={handleBlur}
       />
-      <input type="file" onChange={(e) => handleImageUpload(e.target.files)} />
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={(e) => handleImageUpload(e)}
+      />
+      {isUploading && (
+        <span style={{ fontSize: "0.8rem" }}>Uploading Image</span>
+      )}
     </>
   );
 }
