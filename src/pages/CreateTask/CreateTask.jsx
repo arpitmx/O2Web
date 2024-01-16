@@ -1,5 +1,5 @@
 import Select from "react-select";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuthState } from "react-firebase-hooks/auth";
 import {
   addTask,
@@ -11,6 +11,8 @@ import { auth, logout} from "../../../firebase";
 import styles from "./CreateTask.module.css";
 import { useNavigate, useLocation } from "react-router-dom";
 import SummaryEdit from './components/SummaryEdit';
+import { toast, ToastContainer } from 'react-toastify';
+import "react-toastify/dist/ReactToastify.css";
 
 export default function CreateTask() {
   const location = useLocation();
@@ -24,12 +26,15 @@ export default function CreateTask() {
   }
 
   //If the user logs out redirect to login page
-  const [user, loading] = useAuthState(auth);
+  const [user] = useAuthState(auth);
   useEffect(() => {
       if(loading){
           return;
       }
       if (!user){
+          navigate("/");
+      }
+      if(!location.state.userData){
           navigate("/");
       }
   }, [user]);
@@ -93,9 +98,7 @@ export default function CreateTask() {
         version: 4,
     })
 
-    // function logout(){
-    //     navigate("/");
-    // }
+    const [loading, setLoading] = useState(false);
 
   // get project specific data when new project is selected
   useEffect(() => {
@@ -108,31 +111,39 @@ export default function CreateTask() {
       });
     });
 
-        // get segments of the selected project
-        getSegments(task.project_ID).then((segmentData) => {
-            setData((prevData) => {
-                return {...prevData, segments : segmentData ? segmentData.map((segment) => {
-                    return {value : segment[0], label : segment[0], sections : segment[1]}
-                }) : []};
-            })
-        });
+    // get segments of the selected project
+    getSegments(task.project_ID).then((segmentData) => {
+        setData((prevData) => {
+            return {...prevData, segments : segmentData ? segmentData.map((segment) => {
+                return {value : segment[0], label : segment[0], sections : segment[1]}
+            }) : []};
+        })
+    });
 
-        // get constibutors of the selected project
-        getContributors(task.project_ID).then((contributorsData) => {
-            setData((prevData) => {
-                return {...prevData, contributors : contributorsData ? contributorsData.map((contributor) => {
-                    return {...contributor, value : contributor.EMAIL, label : contributor.USERNAME}
-                }) : []};
-            })
-        });
+    // get constibutors of the selected project
+    getContributors(task.project_ID).then((contributorsData) => {
+        setData((prevData) => {
+            return {...prevData, contributors : contributorsData ? contributorsData.map((contributor) => {
+                return {...contributor, value : contributor.EMAIL, label : contributor.USERNAME}
+            }) : []};
+        })
+    });
 
     return () => {
-      // reset any selected moderators or tags from task array
+      // reset any selected moderators, tags, section or segment from task object
       setTask((prevTask) => ({
         ...prevTask,
         moderators: [],
         tags: [],
+        assignee: undefined,
+        section: undefined,
+        segment: undefined,
       }));
+
+      // reset section select options
+      setData((prevData) => ({
+        ...prevData, sections : [],
+      }))
     };
   }, [task.project_ID]);
 
@@ -150,17 +161,31 @@ export default function CreateTask() {
         ]["sections"].map((section) => ({ value: section, label: section })),
       };
     });
+    return(() => {
+      // reset any selected section in the task object
+      setTask((prevTask) => ({
+        ...prevTask,
+        section: undefined,
+      }));
+    })
   }, [task.segment]);
 
     // handle submission of the task
     async function handleTaskSubmit(e){
+        setLoading(true);
         e.preventDefault();
         // console.log(task);
         addTask(task).then(() => {
-            alert("task added succesfully");
+          toast.success("Task added successfully !", {
+            position: "top-center"
+          });
         }).catch((error) => {
             console.log(error)
-            alert("error adding task");
+            toast.error("Problem Adding Task !", {
+              position: "top-center"
+            });
+        }).finally(() => {
+          setLoading(false);
         })
     }
 
@@ -263,13 +288,14 @@ export default function CreateTask() {
     // render task form
     return (
         <>
+            <ToastContainer />
             <form className={styles.form} onSubmit={handleTaskSubmit}>
                 <div className={styles.header}>
                     <img className={styles.logoImg} src="./O2logo.png" alt="O2 logo"/>
                     {/* <h1>New Task</h1> */}
                     <div className={styles.btnCont}>
                       <button type="submit" className={styles.taskSubmit}>
-                          Create Task
+                          {loading ? "Hold On..." : "Create Task"}
                       </button>
                       <button type="button" className={styles.logoutBtn} onClick={handleLogout}>
                           Logout
@@ -337,6 +363,9 @@ export default function CreateTask() {
                     <fieldset>
                       <legend>Assignee</legend>
                       <Select
+                        value={task.assignee ? data.contributors[data.contributors.findIndex((contributor) => {
+                          return contributor.value === task.assignee;
+                        })] : ""}
                         options={data.contributors}
                         onChange={(select) => handleSelectChange(select, "assignee")}
                         autoFocus={true}
@@ -353,6 +382,7 @@ export default function CreateTask() {
                     <fieldset>
                       <legend>Segment</legend>
                       <Select
+                        value={ task.segment ? {value : task.segment, label: task.segment} : ""}
                         options={data.segments}
                         onChange={(select) => handleSelectChange(select, "segment")}
                         autoFocus={true}
@@ -368,6 +398,7 @@ export default function CreateTask() {
                     <fieldset>
                       <legend>Section</legend>
                       <Select
+                        value={task.section ? {value : task.section, label: task.section} : ""}
                         options={data.sections}
                         onChange={(select) => handleSelectChange(select, "section")}
                         autoFocus={true}
@@ -417,6 +448,9 @@ export default function CreateTask() {
                     <legend>Moderators</legend>
                     <Select 
                         isMulti 
+                        value={task.moderators != [] ? modOptions.filter((modOption) => {
+                          return task.moderators.includes(modOption.value)
+                        }) : ""}
                         onChange={handleModsSelect} 
                         options={modOptions}
                         placeholder={"Moderators"}
