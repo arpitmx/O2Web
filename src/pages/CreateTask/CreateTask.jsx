@@ -488,14 +488,21 @@ export default function CreateTask() {
                   fontSize: "1.15rem",
                   fontWeight: "700",
                 }}
-                onClick={() => setAddChecklistModalOpen(true)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setAddChecklistModalOpen(true);
+                }}
               >
                 +
               </button>
               <AddChecklistModal
                 isOpen={isAddChecklistModalOpen}
-                onRequestClose={() => setAddChecklistModalOpen(false)}
+                onRequestClose={(e) => {
+                  e.preventDefault();
+                  setAddChecklistModalOpen(false);
+                }}
                 onAddChecklist={handleAddChecklist}
+                toast={toast}
               />
             </div>
           </fieldset>
